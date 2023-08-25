@@ -29,9 +29,7 @@ def main():
     for i in range(foodCount):
         foodArray[i] = Food(foodSpawnPosition(spawnPoint=spawnPoint, foodMinSpawnRadius=foodMinSpawnRadius))
 
-
-
-
+    
 
 if __name__ == "__main__":
     main()
