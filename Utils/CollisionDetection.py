@@ -1,11 +1,11 @@
 import numpy as np
+from itertools import product
 
-def CollisionDetection(organismArray, foodArray):
+def CollisionDetection(foodArray, organismArray):
+    for organism, food in product(organismArray, foodArray):
+        if is_collision(organism, food):
+            organism.EatsFood()
 
-    findOrganismPosition = np.vectorize(lambda organismObject: organismObject.currentPosition)
-    organismPositionArray = findOrganismPosition(organismArray)
-
-    findOrganismFood = np.vectorize(lambda organismObject: organismObject.size)
-
-    findFoodPosition = np.vectorize(lambda foodObject: foodObject.position)
-    foodPositionArray = findFoodPosition(foodArray)
+def is_collision(organism, food):
+    distance = np.sqrt((food.x - organism.x)**2 + (food.y - organism.y)**2)
+    return distance <= (food.size + organism.size)
