@@ -1,28 +1,32 @@
 import numpy as np
 
-def distance(x1, y1, x2, y2):
-    return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+import numpy as np
 
-def FoodCollision(OrganismArray, foodArray):
-    num_organisms = OrganismArray.shape[1]
+def FoodCollision(organismArray, foodArray, roundNumber):
+    num_organisms = organismArray.shape[1]
     num_food = foodArray.shape[1]
 
-    org_x = OrganismArray[0, :, -1]
-    org_y = OrganismArray[1, :, -1]
-    org_radius = OrganismArray[3, :, -1]
+    org_x = organismArray[0, :, roundNumber]
+    org_y = organismArray[1, :, roundNumber]
+    org_radius = organismArray[3, :, roundNumber]
     food_x = foodArray[0, :]
     food_y = foodArray[1, :]
 
-    # Calculate distances using broadcasting
     distances = np.sqrt((org_x[:, np.newaxis] - food_x)**2 + (org_y[:, np.newaxis] - food_y)**2)
 
-    # Mask of food items to be consumed
-    food_consumed_mask = distances <= org_radius[:, np.newaxis]
+    # Create a mask to track which food items have been consumed
+    food_consumed_mask = np.zeros(num_food, dtype=bool)
 
-    # Increment foodScore for each organism
-    OrganismArray[5, :, -1] += np.sum(food_consumed_mask, axis=1)
+    for org_index in range(num_organisms):
+        food_within_radius = distances[org_index] <= org_radius[org_index]
+        if np.any(food_within_radius):
+            closest_food = np.argmin(distances[org_index])
+            if food_within_radius[closest_food]:
+                organismArray[5, org_index, roundNumber] += 1
+                food_within_radius[closest_food] = False  # Mark food as consumed
+                food_consumed_mask[closest_food] = True  # Update overall mask
 
     # Create a new foodArray without the consumed food
-    new_foodArray = foodArray[:, ~np.any(food_consumed_mask, axis=0)]
+    new_foodArray = foodArray[:, ~food_consumed_mask]
 
-    return OrganismArray, new_foodArray
+    return organismArray, new_foodArray
