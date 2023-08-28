@@ -27,6 +27,10 @@ class Organism ():
         self.canReproduce = False
     
     def Move(self):
+
+        if np.random.rand() < 0.005:
+            self.direction = 2 * np.pi * np.random.rand()
+
         # Update the position based on speed and direction
         self.x += self.speed * np.cos(self.direction)
         self.y += self.speed * np.sin(self.direction)

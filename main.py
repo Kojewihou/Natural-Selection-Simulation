@@ -14,7 +14,7 @@ interval = 1000 / frame_rate  # Interval in milliseconds
 
 def InitializeSimulationConditions():
     #Set Initial Conditions
-    organismCount = 20
+    organismCount = 2000
     foodCount = 50
     spawnPoint = (0.5,0.5)
     foodMinSpawnRadius = 0.2
