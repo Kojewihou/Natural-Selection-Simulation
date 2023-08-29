@@ -1,7 +1,7 @@
 import numpy as np
 
-def ConstructOrganismArray(organismCount, boundaryRadius, frameRate):
-    roundLength = 60 * frameRate + 1
+def ConstructOrganismArray(organismCount, boundaryRadius, roundLength, frameRate):
+    roundLength = roundLength * frameRate + 1
 
     properties = ["xPosition", "yPosition",
                   "direction", "speed", "size", "food"]
@@ -12,7 +12,7 @@ def ConstructOrganismArray(organismCount, boundaryRadius, frameRate):
     organismArray[1, :, 0] = 0  # yPosition
     organismArray[2, :, 0] = np.random.uniform(
         0, 2 * np.pi, size=(organismCount))  # Initial Direction
-    organismArray[3, :, :] = 1  # Size
+    organismArray[3, :, :] = 2  # Size
     organismArray[4, :, :] = boundaryRadius / (frameRate*10)  # Speed 10s to traverse 50m
     organismArray[5, :, 0] = 0  # Food
 

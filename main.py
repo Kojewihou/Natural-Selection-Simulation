@@ -1,111 +1,103 @@
-import pyqtgraph as pg
 import numpy as np
-from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QBrush, QColor
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QWidget
+import time
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from matplotlib.patches import Circle, Rectangle
 
-from Objects import Organism, Food
-from Utils import CollisionDetection, foodSpawnPosition
-
-
-frame_rate = 60  # Desired frame rate in frames per second
-interval = 1000 / frame_rate  # Interval in milliseconds
+from Simulation import NextMove, FoodCollision, ConstructOrganismArray, ConstructFoodArray
 
 
-def InitializeSimulationConditions():
-    #Set Initial Conditions
-    organismCount = 300
-    foodCount = 50
-    spawnPoint = (0.5,0.5)
-    foodMinSpawnRadius = 0.2
+def RunRound(organismArray, foodArray, frameRate):
+    # * Simulation Conditions
 
-    organismArray = np.empty(organismCount, dtype=object)
-    foodArray = np.empty(foodCount, dtype=object)
+    roundLength = organismArray.shape[2]
 
-    #Initialize all organism and food objects
-    for i in range(organismCount):
-        organismArray[i] = Organism(spawnPoint=spawnPoint, size= np.random.uniform(5,25), speedFactor=5)
+    foodArrayDisplay = foodArray.copy()
 
-    for i in range(foodCount):
-        foodArray[i] = Food(foodSpawnPosition(spawnPoint=spawnPoint, foodMinSpawnRadius=foodMinSpawnRadius))
-
-    return organismArray, foodArray
-
-
-
-
-def Main(rounds=10):
-    # Create a Qt application
-    simulator = QApplication([])
-
-    # Create a main window
-    win = QMainWindow()
-    win.setWindowTitle('Natural Selection Simulation')
-
-    # Create a central widget and layout
-    central_widget = QWidget(win)
-    layout = QHBoxLayout()
-    central_widget.setLayout(layout)
-    win.setCentralWidget(central_widget)
-
-    simulationPlot = pg.PlotWidget()
-    trackerPlot = pg.PlotWidget()
-
-    layout.addWidget(simulationPlot)
-    layout.addWidget(trackerPlot)
-
-    # Initialize data for each plot
-
-    organismArray, foodArray = InitializeSimulationConditions()
+    desired_interval = 2.5  # Desired interval in second
+    directionChangeProbability = 1 - \
+        np.exp(-1 / (frameRate * desired_interval))
     
-    organismArrayX = np.array([organism.x for organism in organismArray])
-    organismArrayY = np.array([organism.y for organism in organismArray])
-    size_data = np.array([organism.size for organism in organismArray])
-    organismScatter = pg.ScatterPlotItem(x=organismArrayX, y=organismArrayY, size=size_data)
+    roundStartTime = time.time()
 
-    foodArrayX = np.array([food.x for food in foodArray])
-    foodArrayY = np.array([food.y for food in foodArray])
-    foodScatter = pg.ScatterPlotItem(x=foodArrayX, y=foodArrayY, size=6)
+    for roundNumber in range(1, roundLength):
+        start_time = time.time()
+        organismArray = NextMove(
+            organismArray, roundNumber, boundaryRadius, directionChangeProbability)
+        #elapsed_time = time.time() - start_time
+        #print(f"Frame-{roundNumber + 1} movement took {elapsed_time:.6f} seconds to simulate.")
+        organismArray, foodArray = FoodCollision(
+            organismArray, foodArray, roundNumber)
+        elapsed_time = time.time() - start_time
+        #print( f"Frame-{roundNumber} collision took {elapsed_time:.6f} seconds to simulate.")
+        # time.sleep(1)
 
-    simulationPlot.addItem(foodScatter)
-    simulationPlot.addItem(organismScatter)
+    elapsedRoundTime = time.time() - roundStartTime
 
-    simulationPlot.setXRange(0,1)
-    simulationPlot.setYRange(0,1)
-    simulationPlot.setBackground((126, 196, 136))
+    print(f"Round  took {elapsedRoundTime:.6f} seconds to simulate.")
 
-    color = QColor(255, 0, 0)  # Red color (RGB values)
-    brush = QBrush(color)
-    organismScatter.setBrush(brush)
+    percentConsumed = (np.sum(organismArray[5, :, -1]) / foodArrayDisplay.shape[1]) * 100
+    print(f"Percentage of Food Consumed: {percentConsumed}%")
+    return organismArray, foodArrayDisplay
 
-    color = QColor(0, 0, 255)  # Red color (RGB values)
-    brush = QBrush(color)
-    foodScatter.setBrush(brush)
 
-    def UpdateSimulationPlot():
+def visualize(tuple, boundaryRadius, frameRate):
+    simulationMatrix, foodArray = tuple
+    time_steps = simulationMatrix.shape[2]
 
-        nextMove = np.vectorize(lambda x: x.Move())
-        nextMove(organismArray)
 
-        CollisionDetection(foodArray, organismArray)
+    fig, ax = plt.subplots()
 
-        organismArrayX = np.array([obj.x for obj in organismArray])
-        organismArrayY = np.array([obj.y for obj in organismArray])
+    wood =Circle((0,0), boundaryRadius, fill=True, color='green', linewidth=2, alpha=0.5)
+    home =Circle((0,0), boundaryRadius*0.2, fill=True, color='red', linewidth=2, alpha=0.2)
+    square_center = (0, 0)  # Square center coordinates (x, y)
+    square_side_length = 0.15*boundaryRadius    # Length of each side of the square
+    house = Rectangle((square_center[0] - square_side_length/2, square_center[1] - square_side_length/2),
+                   square_side_length, square_side_length, fill=True, color='black', linewidth=2)
 
-        organismScatter.setData(x=organismArrayX, y=organismArrayY)
-        organismScatter.setSize(size=size_data)
 
-    pass
+    ax.add_patch(wood)
+    ax.add_patch(home)
+    sc = ax.scatter([], [], c='r', marker='D')
+    ax.set_title('Animated Scatter Plot')
+    ax.set_xlabel('X Position')
+    ax.set_ylabel('Y Position') 
+    ax.set_xlim(-boundaryRadius, boundaryRadius)  # Adjust limits based on your data
+    ax.set_ylim(-boundaryRadius, boundaryRadius)  # Adjust limits based on your data
+    ax.axis("off")
+    
+    ax.add_patch(house)
 
-    timer = QTimer()
-    timer.timeout.connect(UpdateSimulationPlot)
-    timer.start(int(interval))
+    ax2 = ax.twinx()
+    ax2.scatter(foodArray[0, :], foodArray[1, :],
+                c='g', marker='8', label='Tree')
+    ax2.set_xlim(-boundaryRadius, boundaryRadius)  # Adjust limits based on your data
+    ax2.set_ylim(-boundaryRadius, boundaryRadius)
+    ax2.axis("off")  # Adjust limits based on your data
+    ax2.legend()
 
-    # Show the main window
-    win.show()
+    def animate(frame):
+        # Access the 3D matrix for the current time step
+        current_positions = simulationMatrix[:, :, frame]
+        # Plot the scatter plot with current positions
+        sc.set_offsets(current_positions[:2, :].T)
+        ax.set_title(
+            f'Food Consumed: {np.sum(current_positions[5,:])}  - F{frame}')
 
-    # Start the Qt event loop
-    simulator.exec_()
+
+    animation = FuncAnimation(
+        fig, animate, frames=time_steps, interval=1000/200)
+    plt.show()
+    print ("run")
+    path = "C:\\Users\\Elliot\\Documents\\Git\\Natural-Selection-Simulation\\Animations\\round.gif"
+    animation.save(path, writer='pillow', fps=frameRate)
+
 
 if __name__ == "__main__":
-    Main(10)
+    frameRate = 60
+    boundaryRadius = 200
+    roundLength = 30
+    organismArray = ConstructOrganismArray(600, boundaryRadius, roundLength,frameRate)
+    foodArray = ConstructFoodArray(70, boundaryRadius)
+    roundResult = RunRound(organismArray, foodArray, frameRate)
+    visualize(roundResult,boundaryRadius, frameRate)

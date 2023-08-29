@@ -5,8 +5,8 @@ def ConstructFoodArray(foodCount, boundaryRadius):
     angles = np.random.uniform(0, 2 * np.pi, foodCount)
 
     # Generate random radii within the boundary radius
-    radii = np.sqrt(np.random.uniform(
-        0.3*boundaryRadius, boundaryRadius**2, foodCount))
+    radii = np.random.uniform(
+        0.2*boundaryRadius, 0.9*boundaryRadius, foodCount)
 
     # Convert polar coordinates to Cartesian coordinates
     x_positions = radii * np.cos(angles)

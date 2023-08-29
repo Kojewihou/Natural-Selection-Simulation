@@ -17,7 +17,7 @@ def NextMove(organismArray, roundNumber, boundaryRadius, directionChangeProbabil
     random_mask = np.random.rand(organismCount) < directionChangeProbability
     # directions[random_mask] += np.random.uniform(-np.pi / 4, np.pi / 4, size=sum(random_mask))
     directions[random_mask] += np.random.choice(
-        [-np.pi / 2, np.pi / 2], p=[0.5, 0.5])
+        [-np.pi / 4, np.pi / 4], p=[0.5, 0.5])
 
     # Update x and y positions based on speed and direction
     xPositions += speeds * np.cos(directions)
@@ -40,5 +40,7 @@ def NextMove(organismArray, roundNumber, boundaryRadius, directionChangeProbabil
 
     # Ensure directions remain within the range [0, 2*pi)
     directions = directions % (2 * np.pi)
+
+    
 
     return organismArray

@@ -10,18 +10,22 @@ def FoodCollision(organismArray, foodArray, roundNumber):
     food_x = foodArray[0, :]
     food_y = foodArray[1, :]
 
-    distances = np.sqrt((org_x[:, np.newaxis] - food_x)**2 + (org_y[:, np.newaxis] - food_y)**2)
-
     # Create a mask to track which food items have been consumed
     food_consumed_mask = np.zeros(num_food, dtype=bool)
 
-    for org_index in range(num_organisms):
-        food_within_radius = distances[org_index] <= org_radius[org_index]
+    for food_index in range(num_food):
+        food_x_pos = food_x[food_index]
+        food_y_pos = food_y[food_index]
+
+        distances = np.sqrt((org_x - food_x_pos)**2 + (org_y - food_y_pos)**2)
+        food_within_radius = distances <= org_radius
+
         if np.any(food_within_radius):
-            closest_food = np.argmin(distances[org_index])
-            if not food_consumed_mask[closest_food]:  # Check if the food item hasn't been consumed
-                organismArray[5, org_index, roundNumber] += 1
-                food_consumed_mask[closest_food] = True  # Mark food as consumed
+            org_indices_within_radius = np.where(food_within_radius)[0]
+            closest_org_index = org_indices_within_radius[np.argmin(distances[org_indices_within_radius])]
+            if not food_consumed_mask[food_index]:  # Check if the food item hasn't been consumed
+                organismArray[5, closest_org_index, roundNumber] += 1
+                food_consumed_mask[food_index] = True  # Mark food as consumed
 
     # Create a new foodArray without the consumed food
     new_foodArray = foodArray[:, ~food_consumed_mask]
