@@ -1,7 +1,5 @@
 import numpy as np
 
-import numpy as np
-
 def FoodCollision(organismArray, foodArray, roundNumber):
     num_organisms = organismArray.shape[1]
     num_food = foodArray.shape[1]
@@ -21,10 +19,9 @@ def FoodCollision(organismArray, foodArray, roundNumber):
         food_within_radius = distances[org_index] <= org_radius[org_index]
         if np.any(food_within_radius):
             closest_food = np.argmin(distances[org_index])
-            if food_within_radius[closest_food]:
+            if not food_consumed_mask[closest_food]:  # Check if the food item hasn't been consumed
                 organismArray[5, org_index, roundNumber] += 1
-                food_within_radius[closest_food] = False  # Mark food as consumed
-                food_consumed_mask[closest_food] = True  # Update overall mask
+                food_consumed_mask[closest_food] = True  # Mark food as consumed
 
     # Create a new foodArray without the consumed food
     new_foodArray = foodArray[:, ~food_consumed_mask]

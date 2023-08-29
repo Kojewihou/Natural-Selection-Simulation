@@ -3,70 +3,44 @@ import time
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-from Simulation import NextMove, FoodCollision
-
-frameRate = 5
+from Simulation import NextMove, FoodCollision, ConstructOrganismArray, ConstructFoodArray
 
 
-def runRound():
+def RunRound(organismArray, foodArray, frameRate):
     # * Simulation Conditions
 
     roundLength = 60 * frameRate + 1
 
-    # * The Arena Conditions
-    boundaryRadius = 50  # 100x100 box
-
-    # * The Organism Generation
-    organismCount = 1000
-    properties = ["xPosition", "yPosition",
-                  "direction", "speed", "size", "food"]
-
-    organismArray = np.empty((len(properties), organismCount, roundLength))
-
-    organismArray[0, :, 0] = 0  # xPosition
-    organismArray[1, :, 0] = 0  # yPosition
-    organismArray[2, :, 0] = np.random.uniform(
-        0, 2 * np.pi, size=(organismCount))  # Initial Direction
-    organismArray[3, :, :] = 1  # Size
-    organismArray[4, :, :] = boundaryRadius / \
-        (frameRate*10)  # Speed 10s to traverse 50m
-    organismArray[5, :, 0] = 0  # Food
-
-    # * Food Generation
-
-    foodCount = 200
-    # Generate random angles (polar coordinates)
-    angles = np.random.uniform(0, 2 * np.pi, foodCount)
-
-    # Generate random radii within the boundary radius
-    radii = np.sqrt(np.random.uniform(
-        0.3*boundaryRadius, boundaryRadius**2, foodCount))
-
-    # Convert polar coordinates to Cartesian coordinates
-    x_positions = radii * np.cos(angles)
-    y_positions = radii * np.sin(angles)
-
-    # Create the foodArray
-    foodArray = np.vstack((x_positions, y_positions))
     foodArrayDisplay = foodArray.copy()
 
-    for roundNumber in range(roundLength-1):
+    desired_interval = 2.5  # Desired interval in second
+    directionChangeProbability = 1 - \
+        np.exp(-1 / (frameRate * desired_interval))
+
+    for roundNumber in range(1, roundLength):
         start_time = time.time()
         organismArray = NextMove(
-            organismArray, roundNumber, organismCount, boundaryRadius)
-        organismArray, foodArray = FoodCollision(
-            organismArray, foodArray, roundNumber + 1)
+            organismArray, roundNumber, boundaryRadius, directionChangeProbability)
         elapsed_time = time.time() - start_time
-        # print(f"Frame-{roundNumber + 1} took {elapsed_time:.6f} seconds to simulate.")
+        print(
+            f"Frame-{roundNumber + 1} movement took {elapsed_time:.6f} seconds to simulate.")
+        organismArray, foodArray = FoodCollision(
+            organismArray, foodArray, roundNumber)
+        elapsed_time = time.time() - start_time
+        print(
+            f"Frame-{roundNumber + 1} collision took {elapsed_time:.6f} seconds to simulate.")
+        time.sleep(1)
 
-    percentConsumed = np.sum(organismArray[5, :, -1])/foodCount * 100
+    percentConsumed = (
+        np.sum(organismArray[5, :, -1])/foodArrayDisplay.shape[1]) * 100
+    print(np.sum(organismArray[5, :, -1]))
+
     print(f"Percentage of Food Consumed: {percentConsumed}%")
     return organismArray, foodArrayDisplay
 
 
-def visualize(tuple):
-    simulationMatrix = tuple[0]
-    foodArray = tuple[1]
+def visualize(tuple, frameRate):
+    simulationMatrix, foodArray = tuple
     time_steps = simulationMatrix.shape[2]
     fig, ax = plt.subplots()
     sc = ax.scatter([], [], c='b', marker='D')
@@ -96,4 +70,8 @@ def visualize(tuple):
 
 
 if __name__ == "__main__":
-    visualize(runRound())
+    frameRate = 60
+    boundaryRadius = 50
+    organismArray = ConstructOrganismArray(12000, boundaryRadius, frameRate)
+    foodArray = ConstructFoodArray(200, boundaryRadius)
+    visualize(RunRound(organismArray, foodArray, frameRate), frameRate)

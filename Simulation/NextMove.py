@@ -1,18 +1,23 @@
 import numpy as np
 
 
-def NextMove(organismArray, roundNumber, organismCount, boundaryRadius):
-    current_data = organismArray[:, :, roundNumber].copy()
-    nextMoveArray = current_data.copy()
+def NextMove(organismArray, roundNumber, boundaryRadius, directionChangeProbability):
+    organismArray[:, :, roundNumber] = organismArray[:,
+                                                     :, roundNumber-1]
+    currentFrameData = organismArray[:, :, roundNumber]
 
-    xPositions = current_data[0, :]
-    yPositions = current_data[1, :]
-    directions = current_data[2, :]
-    speeds = current_data[4, :]
+    organismCount = organismArray.shape[1]
+
+    xPositions = currentFrameData[0, :]
+    yPositions = currentFrameData[1, :]
+    directions = currentFrameData[2, :]
+    speeds = currentFrameData[4, :]
 
     # Update the direction for some organisms
-    random_mask = np.random.rand(organismCount) < 0.05
-    directions[random_mask] += np.random.uniform(-np.pi / 4, np.pi / 4, size=sum(random_mask))
+    random_mask = np.random.rand(organismCount) < directionChangeProbability
+    # directions[random_mask] += np.random.uniform(-np.pi / 4, np.pi / 4, size=sum(random_mask))
+    directions[random_mask] += np.random.choice(
+        [-np.pi / 2, np.pi / 2], p=[0.5, 0.5])
 
     # Update x and y positions based on speed and direction
     xPositions += speeds * np.cos(directions)
@@ -35,11 +40,5 @@ def NextMove(organismArray, roundNumber, organismCount, boundaryRadius):
 
     # Ensure directions remain within the range [0, 2*pi)
     directions = directions % (2 * np.pi)
-
-    # Update nextMoveArray
-    nextMoveArray[0, :] = xPositions
-    nextMoveArray[1, :] = yPositions
-    nextMoveArray[2, :] = directions
-    organismArray[:, :, roundNumber + 1] = nextMoveArray
 
     return organismArray
